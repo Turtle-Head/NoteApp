@@ -41,6 +41,33 @@
         }, 100);
       }
 
+      // Load notes from a file
+      function loadNotesFromFile(setNotes) {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "application/json";
+        input.onchange = e => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = evt => {
+            try {
+              const loaded = JSON.parse(evt.target.result);
+              if (Array.isArray(loaded)) {
+                setNotes(loaded);
+                saveNotes(loaded);
+              } else {
+                alert("Invalid notes file.");
+              }
+            } catch {
+              alert("Could not load notes file.");
+            }
+          };
+          reader.readAsText(file);
+        };
+        input.click();
+      }
+
       function formatDate(dateStr) {
         const d = new Date(dateStr);
         return d.toLocaleString();
@@ -70,7 +97,6 @@
 
         // Touch handler for add note
         function handleAddNoteTouch(e) {
-          // Prevent mouse event after touch
           e.preventDefault();
           handleAddNote(e);
         }
@@ -84,6 +110,12 @@
         function handleDeleteTouch(id, e) {
           e.preventDefault();
           handleDelete(id);
+        }
+
+        // Touch handler for load notes
+        function handleLoadNotesTouch(e) {
+          e.preventDefault();
+          loadNotesFromFile(setNotes);
         }
 
         return (
@@ -130,6 +162,21 @@
                 onTouchEnd={e => { e.preventDefault(); saveNotesToFile(notes); }}
               >
                 Save Current Notes
+              </button>
+              <button
+                type="button"
+                style={{
+                  marginLeft: 10,
+                  padding: "0.4em 1em",
+                  fontSize: "1em",
+                  border: "1px solid #bbb",
+                  background: "#ffd",
+                  cursor: "pointer"
+                }}
+                onClick={() => loadNotesFromFile(setNotes)}
+                onTouchEnd={handleLoadNotesTouch}
+              >
+                Load Saved Notes
               </button>
             </form>
             <ul id="notes" className="notes">
