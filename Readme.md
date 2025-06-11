@@ -7,3 +7,4 @@
 - included button to save Note
 - included button to save all notes
 - included buttons to remove notes
+- added button to load saved notes
