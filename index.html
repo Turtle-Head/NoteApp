@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Notes</title>
+    <link rel="stylesheet" href="css/retain.css">
+    <!-- React and ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+      // Utility for localStorage
+      const NOTES_KEY = "notes";
+      function getNotes() {
+        try {
+          return JSON.parse(localStorage.getItem(NOTES_KEY)) || [];
+        } catch {
+          return [];
+        }
+      }
+      function saveNotes(notes) {
+        localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+      }
+
+      // Save all notes to a master file (download as JSON)
+      function saveNotesToFile(notes) {
+        const blob = new Blob([JSON.stringify(notes, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "notes_master_save.json";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 100);
+      }
+
+      function formatDate(dateStr) {
+        const d = new Date(dateStr);
+        return d.toLocaleString();
+      }
+
+      function NotesApp() {
+        const [notes, setNotes] = React.useState(getNotes());
+        const [input, setInput] = React.useState("");
+        const inputRef = React.useRef(null);
+
+        // Save to localStorage whenever notes change
+        React.useEffect(() => {
+          saveNotes(notes);
+        }, [notes]);
+
+        // Add note (handles both click and touch)
+        function handleAddNote(e) {
+          e.preventDefault();
+          if (input.trim() === "") return;
+          setNotes([
+            ...notes,
+            { content: input, d: new Date().toISOString(), id: Date.now() }
+          ]);
+          setInput("");
+          inputRef.current && inputRef.current.focus();
+        }
+
+        // Touch handler for add note
+        function handleAddNoteTouch(e) {
+          // Prevent mouse event after touch
+          e.preventDefault();
+          handleAddNote(e);
+        }
+
+        // Delete note (handles both click and touch)
+        function handleDelete(id) {
+          setNotes(notes.filter(note => note.id !== id));
+        }
+
+        // Touch handler for delete
+        function handleDeleteTouch(id, e) {
+          e.preventDefault();
+          handleDelete(id);
+        }
+
+        return (
+          <div>
+            <form
+              id="new-note-form"
+              className="new-note-form"
+              onSubmit={handleAddNote}
+              style={{ marginBottom: 15 }}
+            >
+              <input
+                id="new-note-content"
+                className="new-note-content"
+                value={input}
+                ref={inputRef}
+                onChange={e => setInput(e.target.value)}
+                placeholder="Enter your note"
+              />
+              <button
+                type="submit"
+                style={{
+                  marginLeft: 10,
+                  padding: "0.4em 1em",
+                  fontSize: "1em",
+                  border: "1px solid #bbb",
+                  background: "#cde",
+                  cursor: "pointer"
+                }}
+                onTouchEnd={handleAddNoteTouch}
+              >
+                Save Note
+              </button>
+              <button
+                type="button"
+                style={{
+                  marginLeft: 10,
+                  padding: "0.4em 1em",
+                  fontSize: "1em",
+                  border: "1px solid #bbb",
+                  background: "#bfc",
+                  cursor: "pointer"
+                }}
+                onClick={() => saveNotesToFile(notes)}
+                onTouchEnd={e => { e.preventDefault(); saveNotesToFile(notes); }}
+              >
+                Save Current Notes
+              </button>
+            </form>
+            <ul id="notes" className="notes">
+              {notes.map(note => (
+                <li className="note" key={note.id}>
+                  <span className="note-date">{formatDate(note.d)}</span>
+                  <div>{note.content}</div>
+                  <button
+                    onClick={() => handleDelete(note.id)}
+                    onTouchEnd={e => handleDeleteTouch(note.id, e)}
+                    style={{
+                      marginTop: 10,
+                      padding: "0.3em 1em",
+                      fontSize: "0.9em",
+                      border: "1px solid #bbb",
+                      background: "#e88",
+                      color: "#222",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Delete
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<NotesApp />);
+    </script>
+</body>
+</html>
